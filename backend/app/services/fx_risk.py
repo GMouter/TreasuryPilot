@@ -30,17 +30,13 @@ def calculate_fx_risk(
     if not 0 <= hedge_percentage <= 100:
         raise ValueError("Hedge percentage must be between 0 and 100")
 
-    # Convert foreign currency exposure into base currency.
-    base_currency_value = foreign_amount / current_fx_rate
+    # Rates are quoted as base currency units per foreign currency unit.
+    base_currency_value = foreign_amount * current_fx_rate
 
     # Calculate potential FX impact from adverse movements.
-    value_after_5_percent_move = (
-        foreign_amount / (current_fx_rate * 0.95)
-    )
+    value_after_5_percent_move = foreign_amount * (current_fx_rate * 1.05)
 
-    value_after_10_percent_move = (
-        foreign_amount / (current_fx_rate * 0.90)
-    )
+    value_after_10_percent_move = foreign_amount * (current_fx_rate * 1.10)
 
     impact_5_percent = (
         value_after_5_percent_move - base_currency_value

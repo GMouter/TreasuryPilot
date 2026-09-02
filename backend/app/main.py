@@ -7,6 +7,8 @@ from app.database.base import Base
 
 from app.models.company import Company
 from app.models.exposure import Exposure
+from app.models.historical_rate import HistoricalRate
+from app.models.outcome import ExposureOutcome
 
 from app.routers.companies import router as companies_router
 from app.routers.fx_risk import router as fx_risk_router
