@@ -37,6 +37,9 @@
 .reduction { color:var(--green); font-weight:700; }
 .backtest-decision { display:flex; justify-content:space-between; align-items:center; margin:20px 0 10px; padding:14px; background:var(--mint); color:var(--green); font:10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.7px; }
 .backtest-decision strong { font-size:14px; text-align:right; }
+.outcome-panel { margin-top:12px; }
+.outcome-highlight { display:flex; justify-content:space-between; align-items:center; margin:20px 0 0; padding:14px; background:var(--mint); color:var(--green); font:10px 'DM Mono',monospace; text-transform:uppercase; letter-spacing:.7px; }
+.outcome-highlight strong { font-size:14px; text-align:right; }
 .import-panel { margin-top:12px; }
 .file-picker { max-width:340px; margin-top:20px; }
 .file-picker input { padding:9px; font-size:11px; text-transform:none; letter-spacing:0; }

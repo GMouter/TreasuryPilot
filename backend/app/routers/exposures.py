@@ -16,6 +16,7 @@ from app.services.risk_estimators import build_parallel_estimates
 from app.services.sensitivity import calculate_sensitivity
 from app.services.concentration import calculate_concentration
 from app.services.backtesting import run_historical_backtest, summarize_backtests
+from app.services.outcome_evaluation import evaluate_outcomes
 
 
 router = APIRouter(
@@ -214,6 +215,29 @@ def import_outcomes(
         db.rollback()
         raise
     return {"imported_count": len(imported), "outcome_ids": [outcome.id for outcome in imported]}
+
+
+@router.get("/outcomes/company/{company_id}/performance")
+def get_outcome_performance(
+    company_id: int,
+    db: Session = Depends(get_db),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    exposures = db.query(Exposure).filter(Exposure.company_id == company_id).all()
+    exposure_amounts = {exposure.id: exposure.foreign_amount for exposure in exposures}
+    exposure_ids = set(exposure_amounts)
+    outcomes = [
+        outcome for outcome in db.query(ExposureOutcome).all()
+        if outcome.exposure_id in exposure_ids
+    ]
+    return {
+        "company_id": company_id,
+        "base_currency": company.base_currency,
+        "performance": evaluate_outcomes(outcomes, exposure_amounts),
+    }
 
 
 @router.get("/concentration/{company_id}")

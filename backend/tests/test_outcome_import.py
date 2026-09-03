@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.routers.exposures import OutcomeImportItem
+from app.services.outcome_evaluation import evaluate_outcomes
 
 
 def test_outcome_import_item_accepts_realized_settlement_data():
@@ -37,3 +38,20 @@ def test_outcome_import_item_rejects_non_positive_rates(field):
 
     with pytest.raises(ValidationError):
         OutcomeImportItem(**values)
+
+
+def test_evaluation_compares_realized_cost_with_no_hedge():
+    outcome = type("Outcome", (), {
+        "exposure_id": 16,
+        "decision_fx_rate": 0.80,
+        "settlement_fx_rate": 0.84,
+        "hedge_percentage": 75,
+        "hedge_cost": 100,
+    })()
+
+    result = evaluate_outcomes([outcome], {16: 100_000})
+
+    assert result["available"] is True
+    assert result["outcome_count"] == 1
+    assert result["strategies"][-1]["strategy"] == "No hedge"
+    assert result["strategies"][-1]["average_total_cost"] == pytest.approx(4_000)

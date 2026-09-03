@@ -17,6 +17,7 @@ function Dashboard() {
   const [data, setData] = useState(null);
   const [riskEstimates, setRiskEstimates] = useState(null);
   const [backtest, setBacktest] = useState(null);
+  const [outcomePerformance, setOutcomePerformance] = useState(null);
   const [hedgeCostRate, setHedgeCostRate] = useState("2");
   const [overhedgePenaltyRate, setOverhedgePenaltyRate] = useState("1");
   const [riskAppetite, setRiskAppetite] = useState("75");
@@ -125,6 +126,17 @@ function Dashboard() {
     }
   }
 
+  async function loadOutcomePerformance(companyId) {
+    try {
+      const response = await fetch(`${API_URL}/exposures/outcomes/company/${companyId}/performance`);
+      if (!response.ok) throw new Error("Failed to load realized performance");
+      setOutcomePerformance(await response.json());
+    } catch (err) {
+      console.error(err);
+      setOutcomePerformance(null);
+    }
+  }
+
   async function runCalibration() {
     const exposureId = data?.portfolio_recommendation?.priority_exposure?.exposure_id;
     if (!exposureId) return;
@@ -218,6 +230,7 @@ function Dashboard() {
   const loadConcentrationEvent = useEffectEvent(loadConcentration);
   const loadSensitivityEvent = useEffectEvent(loadSensitivity);
   const loadBacktestEvent = useEffectEvent(loadBacktest);
+  const loadOutcomePerformanceEvent = useEffectEvent(loadOutcomePerformance);
 
   async function loadFxRate(value) {
     const code = value.trim().toUpperCase();
@@ -259,6 +272,7 @@ function Dashboard() {
       loadDashboardEvent();
       loadConcentrationEvent(selectedCompanyId);
       loadFxRateEvent(currency);
+      loadOutcomePerformanceEvent(selectedCompanyId);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [selectedCompanyId, currency]);
@@ -720,6 +734,29 @@ function Dashboard() {
           )}
           {backtest.summary && <p className="model-meta">Best strategy by average total cost: {backtest.summary.best_strategy}</p>}
           {backtest.available && <p className="model-meta">Assumptions: {(Number(hedgeCostRate) * 100).toFixed(1)}% annual hedge cost · {(Number(overhedgePenaltyRate) * 100).toFixed(1)}% over-hedge penalty · {riskAppetite}% risk appetite.</p>}
+        </section>
+      )}
+      {outcomePerformance && (
+        <section className="panel outcome-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Observed outcomes</p>
+              <h2>Realized performance</h2>
+            </div>
+            <span className="scenario-icon">✓</span>
+          </div>
+          {outcomePerformance.performance.available ? (
+            <>
+              <p className="muted">Based on {outcomePerformance.performance.outcome_count} imported or generated settlement outcomes.</p>
+              <div className="outcome-highlight"><span>Lowest observed total cost</span><strong>{outcomePerformance.performance.best_strategy}</strong></div>
+              <div className="backtest-table-wrap">
+                <table className="backtest-table">
+                  <thead><tr><th>Strategy</th><th>Average total cost</th><th>Maximum cost</th><th>Reduction</th></tr></thead>
+                  <tbody>{outcomePerformance.performance.strategies.map((strategy) => <tr key={strategy.strategy}><td><strong>{strategy.strategy}</strong></td><td>{currencyMoney(strategy.average_total_cost)}</td><td>{currencyMoney(strategy.maximum_total_cost)}</td><td className="reduction">{(strategy.cost_reduction_vs_no_hedge * 100).toFixed(0)}%</td></tr>)}</tbody>
+                </table>
+              </div>
+            </>
+          ) : <p className="muted">{outcomePerformance.performance.reason}</p>}
         </section>
       )}
       <section className="workspace-grid">
